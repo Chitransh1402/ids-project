@@ -52,7 +52,7 @@ USERS = {
 }
 
 LOG_FILE = "alerts.log"
-API_URL  = os.environ.get("API_URL", "http://localhost:5000")
+API_URL  = os.environ.get("API_URL", "https://ids-project2-o.onrender.com")
 
 COLS = [
     'duration','protocol_type','service','flag','src_bytes','dst_bytes',
