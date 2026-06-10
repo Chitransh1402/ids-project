@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  # Flask API
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./model:/app/model
+      - ./alerts.log:/app/alerts.log
+    environment:
+      - FLASK_DEBUG=false
+      - PORT=5000
+    restart: unless-stopped
+
+  # Streamlit Dashboard
+  dashboard:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    command: >
+      sh -c "pip install -r requirements.txt -q &&
+             streamlit run dashboard.py
+             --server.port 8501
+             --server.address 0.0.0.0"
+    environment:
+      - API_URL=http://api:5000
+    depends_on:
+      - api
+    restart: unless-stopped

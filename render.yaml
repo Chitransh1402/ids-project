@@ -1,0 +1,34 @@
+# Render deployment configuration
+# Deploy at: https://render.com → New Web Service → connect your repo
+
+services:
+  # ── Flask API (Backend) ───────────────────────────────────────────────────
+  - type: web
+    name: ids-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: FLASK_DEBUG
+        value: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ── Streamlit Dashboard (Frontend) ────────────────────────────────────────
+  - type: web
+    name: ids-dashboard
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run dashboard.py --server.port $PORT --server.address 0.0.0.0
+    envVars:
+      - key: API_URL
+        # After deploying ids-api, replace this with its Render URL:
+        # e.g. https://ids-api.onrender.com
+        value: https://ids-api.onrender.com
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    autoDeploy: true
