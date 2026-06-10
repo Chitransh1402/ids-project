@@ -1,7 +1,6 @@
-﻿data/
+data/
 __pycache__/
 *.pyc
 .env
 .venv/
 venv/
-*.pkl
