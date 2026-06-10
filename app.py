@@ -5,12 +5,10 @@ import numpy as np
 
 app = Flask(__name__)
 
-# Load saved model, encoders, scaler at startup
 model    = joblib.load('model/ids_model.pkl')
 encoders = joblib.load('model/encoders.pkl')
 scaler   = joblib.load('model/scaler.pkl')
 
-# Column names (same order as training, minus 'label' and 'difficulty')
 FEATURE_COLS = ['duration','protocol_type','service','flag','src_bytes',
                 'dst_bytes','land','wrong_fragment','urgent','hot',
                 'num_failed_logins','logged_in','num_compromised','root_shell',
@@ -28,18 +26,23 @@ FEATURE_COLS = ['duration','protocol_type','service','flag','src_bytes',
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
-    df = pd.DataFrame([data])  # convert JSON input to dataframe
+    df = pd.DataFrame([data])
 
-    # Encode categorical columns
+    # Use dictionary mapping (matches new preprocess.py format)
     for col in ['protocol_type', 'service', 'flag']:
-        df[col] = encoders[col].transform(df[col])
+        mapping = encoders[col]
+        df[col] = df[col].apply(lambda x: mapping.get(str(x).strip(), 0))
 
-    df_scaled = scaler.transform(df[FEATURE_COLS])
+    # Convert all to float to avoid type errors
+    for col in FEATURE_COLS:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    df_scaled = scaler.transform(df[FEATURE_COLS].values)
     prediction = model.predict(df_scaled)[0]
 
     result = {
-        "prediction": prediction,       # "normal" or "attack"
-        "alert": prediction == "attack"  # True/False
+        "prediction": prediction,
+        "alert": bool(prediction == "attack")
     }
     return jsonify(result)
 
