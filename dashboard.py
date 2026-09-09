@@ -34,7 +34,7 @@ SMTP_PASS   = os.environ.get("SMTP_PASSWORD", "")
 ALERT_TO    = os.environ.get("ALERT_TO",      "yashbajhal1485@gmail.com")
 GROQ_KEY    = os.environ.get("GROQ_API_KEY",  "")
 
-COLS = [
+FEATURE_COLS = [
     'duration','protocol_type','service','flag','src_bytes','dst_bytes',
     'land','wrong_fragment','urgent','hot','num_failed_logins','logged_in',
     'num_compromised','root_shell','su_attempted','num_root','num_file_creations',
@@ -44,8 +44,11 @@ COLS = [
     'srv_diff_host_rate','dst_host_count','dst_host_srv_count',
     'dst_host_same_srv_rate','dst_host_diff_srv_rate','dst_host_same_src_port_rate',
     'dst_host_srv_diff_host_rate','dst_host_serror_rate','dst_host_srv_serror_rate',
-    'dst_host_rerror_rate','dst_host_srv_rerror_rate','label'
+    'dst_host_rerror_rate','dst_host_srv_rerror_rate'
 ]
+
+# NSL-KDD demo rows contain 41 input features plus label and difficulty.
+CSV_COLS = FEATURE_COLS + ['label', 'difficulty']
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def log_attack(protocol, service, flag):
@@ -120,9 +123,13 @@ def dashboard():
         st.markdown(f"Role: {'🔴 Admin' if is_admin else '🟢 Viewer'}")
         st.markdown("---")
         try:
-            r = requests.get(f"{API_URL}/health", timeout=5)
-            st.success("✅ API Online") if r.status_code==200 else st.error("❌ API Error")
-        except: st.error("❌ API Offline")
+            r = requests.get(f"{API_URL}/health", timeout=30)
+            r.raise_for_status()
+            if r.json().get("status") != "running":
+                raise RuntimeError("API did not report running status")
+            st.success("✅ API Online")
+        except Exception as exc:
+            st.error(f"❌ API unavailable: {exc}")
         st.markdown("---")
         st.markdown("**🤖 AI (RAG)**")
         st.success("✅ Groq Connected") if GROQ_KEY else st.warning("⚠️ GROQ_API_KEY not set")
@@ -155,22 +162,53 @@ def dashboard():
         st.info("Upload a CSV file with 41 network features. Use demo files from `demo/` folder.")
         uploaded_file = st.file_uploader("Choose a CSV file", type=["csv"])
         if uploaded_file:
-            df = pd.read_csv(uploaded_file, names=COLS)
+            raw = pd.read_csv(uploaded_file, header=None)
+            if raw.shape[1] == 43:
+                raw.columns = CSV_COLS
+            elif raw.shape[1] == 42:
+                raw.columns = FEATURE_COLS + ['label']
+                raw['difficulty'] = None
+            elif raw.shape[1] == 41:
+                raw.columns = FEATURE_COLS
+                raw['label'] = None
+                raw['difficulty'] = None
+            else:
+                st.error(
+                    "Invalid CSV: expected 41 features, optionally followed by "
+                    f"label and difficulty. Received {raw.shape[1]} columns."
+                )
+                st.stop()
+
+            df = raw
             df_display = df.copy()
             filename = uploaded_file.name
-            try: requests.get(f"{API_URL}/health", timeout=5)
-            except: st.error("❌ Flask API is not running."); st.stop()
+            try:
+                health = requests.get(f"{API_URL}/health", timeout=30)
+                health.raise_for_status()
+                if health.json().get("status") != "running":
+                    raise RuntimeError("API did not report running status")
+            except Exception as exc:
+                st.error(f"❌ Flask API is not running: {exc}")
+                st.stop()
             predictions = []
             progress = st.progress(0); status_text = st.empty()
             for idx, (_, row) in enumerate(df.iterrows()):
-                payload = row.drop('label').to_dict()
+                # Send exactly the 41 training-time input features.
+                payload = row[FEATURE_COLS].to_dict()
                 payload = {k: float(v) if hasattr(v,'item') else v for k,v in payload.items()}
                 try:
-                    res = requests.post(f"{API_URL}/predict", json=payload, timeout=5).json()
-                    predictions.append(res['prediction'])
-                    if res['prediction']=='attack':
+                    response = requests.post(f"{API_URL}/predict", json=payload, timeout=30)
+                    response.raise_for_status()
+                    result = response.json()
+                    if 'prediction' not in result:
+                        raise ValueError(f"Unexpected API response: {result}")
+
+                    predictions.append(result['prediction'])
+                    if result['prediction']=='attack':
                         log_attack(str(row['protocol_type']),str(row['service']),str(row['flag']))
-                except: predictions.append('error')
+                except Exception as exc:
+                    predictions.append('error')
+                    st.warning(f"Row {idx + 1} could not be classified: {exc}")
                 progress.progress((idx+1)/len(df))
                 status_text.caption(f"Processed {idx+1} / {len(df)} records")
             progress.empty(); status_text.empty()
@@ -186,6 +224,8 @@ def dashboard():
                 if SMTP_PASS:
                     ok,msg = send_email_alert(total,attacks,normal,filename)
                     st.info(f"📧 Email sent to {ALERT_TO}") if ok else st.warning(f"📧 Email failed: {msg}")
+            elif errors:
+                st.warning(f"⚠️ {errors} row(s) could not be classified. No conclusion can be made yet.")
             else:
                 st.success("✅ No attacks detected. All traffic is normal.")
             st.markdown("### Results (first 50 rows)")
