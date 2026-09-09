@@ -354,16 +354,18 @@ def dashboard():
                 with st.spinner("Retrieving knowledge and generating explanation..."):
                     try:
                         from rag_engine import explain_attack
-                        explanation=explain_attack(protocol,service,flag,prediction)
-                        st.markdown("---")
-                        st.markdown("#### 🤖 AI Analysis")
-                        st.markdown(f"""<div style="background:#1a1f2e;border:1px solid #2d3748;border-radius:10px;padding:20px;">
-                        <p style="color:#e2e8f0;font-size:15px;line-height:1.7">{explanation}</p></div>""",unsafe_allow_html=True)
-                        st.markdown("---")
-                        st.caption("💡 This explanation is generated using RAG (Retrieval-Augmented Generation) — "
-                                   "the AI retrieves relevant cybersecurity knowledge before generating the response.")
+                        st.session_state["threat_explanation"] = explain_attack(
+                            protocol, service, flag, prediction
+                        )
                     except Exception as e:
-                        st.error(f"Error: {e}")
+                        st.session_state["threat_explanation"] = f"AI explanation unavailable: {e}"
+
+            if "threat_explanation" in st.session_state:
+                st.markdown("---")
+                st.markdown("#### 🤖 AI Analysis")
+                st.info(st.session_state["threat_explanation"])
+                st.caption("💡 This explanation is generated using RAG (Retrieval-Augmented Generation) — "
+                           "the AI retrieves relevant cybersecurity knowledge before generating the response.")
             # Also show last results if available
             if 'last_results' in st.session_state:
                 st.markdown("---")
@@ -376,9 +378,10 @@ def dashboard():
                         for i,(idx,row) in enumerate(attack_rows.iterrows()):
                             with st.spinner(f"Explaining attack {i+1}/3..."):
                                 exp=explain_attack(str(row['protocol_type']),str(row['service']),str(row['flag']))
-                                st.markdown(f"""<div style="background:#1a1f2e;border:1px solid #2d3748;border-radius:8px;padding:16px;margin:8px 0">
-                                <strong style="color:#ef4444">Attack {i+1}</strong> — protocol={row['protocol_type']}, service={row['service']}, flag={row['flag']}<br><br>
-                                <span style="color:#e2e8f0">{exp}</span></div>""",unsafe_allow_html=True)
+                                st.markdown(f"**🚨 Attack {i+1}** — "
+                                            f"protocol={row['protocol_type']}, "
+                                            f"service={row['service']}, flag={row['flag']}")
+                                st.info(exp)
                 else:
                     st.info("No attacks found in last analysis.")
 
@@ -452,19 +455,20 @@ def dashboard():
                 with st.spinner("Retrieving knowledge and generating security report..."):
                     try:
                         from rag_engine import analyze_attack_log
-                        report=analyze_attack_log(log_contents)
-                        st.markdown("---")
-                        st.markdown("#### 📋 AI-Generated Security Report")
-                        st.markdown(f"""<div style="background:#1a1f2e;border:1px solid #2d3748;border-radius:10px;padding:24px;">
-                        <p style="color:#e2e8f0;font-size:14px;line-height:1.8;white-space:pre-wrap">{report}</p></div>""",unsafe_allow_html=True)
-                        st.download_button("⬇️ Download Report",data=report,
-                                           file_name=f"security_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                                           mime="text/plain")
-                        st.markdown("---")
-                        st.caption("💡 This report is generated using RAG — the AI retrieves cybersecurity knowledge "
-                                   "relevant to the detected attack patterns before generating recommendations.")
+                        st.session_state["security_report"] = analyze_attack_log(log_contents)
                     except Exception as e:
-                        st.error(f"Error: {e}")
+                        st.session_state["security_report"] = f"AI report generation unavailable: {e}"
+
+            if "security_report" in st.session_state:
+                report = st.session_state["security_report"]
+                st.markdown("---")
+                st.markdown("#### 📋 AI-Generated Security Report")
+                st.text_area("Generated report", value=report, height=320, disabled=True)
+                st.download_button("⬇️ Download Report",data=report,
+                                   file_name=f"security_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                                   mime="text/plain")
+                st.caption("💡 This report is generated using RAG — the AI retrieves cybersecurity knowledge "
+                           "relevant to the detected attack patterns before generating recommendations.")
 
 # ── Entry ─────────────────────────────────────────────────────────────────────
 if "logged_in" not in st.session_state:

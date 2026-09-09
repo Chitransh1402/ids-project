@@ -1,34 +1,71 @@
 """
 rag_engine.py
 RAG (Retrieval-Augmented Generation) engine for the IDS project.
-Uses Groq API (Llama 3) as the LLM and knowledge_base.py for retrieval.
+Uses Groq API and knowledge_base.py for retrieval.
 """
 
 import os
 from groq import Groq
-from knowledge_base import get_context, retrieve
+from knowledge_base import get_context
 from dotenv import load_dotenv
+
 load_dotenv()
 
-# ── Groq client ───────────────────────────────────────────────────────────────
+# Current Groq model. You can override it in .env or Render:
+# GROQ_MODEL=openai/gpt-oss-20b
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+
+
 def get_groq_client():
+    """Create a Groq client using the GROQ_API_KEY environment variable."""
     api_key = os.environ.get("GROQ_API_KEY", "")
+
     if not api_key:
         raise ValueError("GROQ_API_KEY not set in environment variables or .env file.")
+
     return Groq(api_key=api_key)
 
 
-# ── Feature 1: AI Threat Explainer ────────────────────────────────────────────
+def get_ai_response(messages, max_tokens=700, temperature=0.4):
+    """
+    Send a request to Groq and return readable response text.
+    Low reasoning effort prevents the model from using all output tokens
+    internally and returning a blank final response.
+    """
+    client = get_groq_client()
+
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        reasoning_effort="low",
+        include_reasoning=False,
+    )
+
+    content = response.choices[0].message.content
+
+    if not content or not str(content).strip():
+        return (
+            "The AI model returned an empty response. "
+            "Please try again in a few seconds."
+        )
+
+    return str(content).strip()
+
+
 def explain_attack(protocol: str, service: str, flag: str,
                    prediction: str = "attack") -> str:
-    """
-    Given network connection features, retrieves relevant cybersecurity
-    knowledge and generates a natural language explanation of the threat.
-    """
-    query = f"{prediction} network intrusion protocol {protocol} service {service} flag {flag}"
+    """Generate a RAG-grounded explanation for selected traffic features."""
+
+    query = (
+        f"{prediction} network intrusion protocol {protocol} "
+        f"service {service} flag {flag}"
+    )
     context = get_context(query, top_k=3)
 
     prompt = f"""You are a cybersecurity analyst assistant for an Intrusion Detection System.
+
 A network connection has been classified as: {prediction.upper()}
 
 Connection Details:
@@ -39,119 +76,108 @@ Connection Details:
 Relevant cybersecurity knowledge:
 {context}
 
-Based on this information, provide a concise analysis (3-4 sentences) that:
-1. Identifies the likely attack type based on the connection features
-2. Explains what this attack does and why it is dangerous
-3. Suggests an immediate mitigation step
+Based on this information, provide a concise analysis in 3-4 sentences:
+1. Identify the likely attack type based on the connection features.
+2. Explain what this attack does and why it is dangerous.
+3. Suggest one immediate mitigation step.
 
-Keep the response professional, clear, and actionable. Do not use markdown headers."""
+Keep the response professional, clear, and actionable.
+Do not use markdown headers."""
 
     try:
-        client = get_groq_client()
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+        return get_ai_response(
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
+            max_tokens=700,
             temperature=0.3,
         )
-        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"AI explanation unavailable: {str(e)}"
 
 
-# ── Feature 2: AI Security Chatbot ────────────────────────────────────────────
 def chat_with_rag(user_message: str, chat_history: list[dict]) -> str:
-    """
-    Answers user questions about the IDS project, attacks, and network security
-    using RAG - retrieves relevant knowledge before generating a response.
-    """
+    """Answer IDS and cybersecurity questions using RAG."""
+
     context = get_context(user_message, top_k=3)
 
     system_prompt = f"""You are an expert AI assistant for a Cloud-Based Intelligent Intrusion Detection System (IDS).
-You help users understand network security, attack types, the NSL-KDD dataset, and the IDS system.
 
-The IDS system details:
-- Dataset: NSL-KDD (41 features, binary classification: normal/attack)
-- Model: Random Forest Classifier (300 estimators, ~99% accuracy)
-- Backend: Flask REST API (/predict, /health endpoints)
-- Frontend: Streamlit dashboard with role-based auth (Admin/Viewer)
-- Federated Learning: FedAvg across 3 simulated clients (Hospital, Bank, Telecom)
-- Deployment: Docker + Render Cloud
-- Email alerts: Gmail SMTP on attack detection
+You help users understand network security, attack types, the NSL-KDD dataset, and this IDS system.
+
+System details:
+- Dataset: NSL-KDD; 41 network features; binary classification: normal or attack
+- Model: Random Forest Classifier
+- Backend: Flask REST API with /predict and /health
+- Frontend: Streamlit dashboard with Admin and Viewer roles
+- Federated Learning: simulation across Hospital, Bank, and Telecom clients
+- Deployment: Docker and Render
+- Email alerts: Gmail SMTP after attack detection
 
 Relevant knowledge base context:
 {context}
 
 Answer clearly and concisely. If the question is outside your knowledge, say so honestly.
-Do not use excessive markdown - keep responses conversational but informative."""
+Do not use excessive markdown."""
 
     messages = [{"role": "system", "content": system_prompt}]
-    # Add chat history (last 6 messages for context window)
-    for msg in chat_history[-6:]:
-        messages.append(msg)
+    messages.extend(chat_history[-6:])
     messages.append({"role": "user", "content": user_message})
 
     try:
-        client = get_groq_client()
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+        return get_ai_response(
             messages=messages,
-            max_tokens=500,
+            max_tokens=700,
             temperature=0.5,
         )
-        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Chatbot unavailable: {str(e)}"
 
 
-# ── Feature 3: AI Attack Log Analyzer ─────────────────────────────────────────
 def analyze_attack_log(log_contents: str) -> str:
-    """
-    Reads the attack log and generates a natural language security report
-    summarizing detected threats, patterns, and recommendations.
-    """
-    if not log_contents.strip():
-        return "No attack log entries found. The system has not detected any threats yet."
+    """Generate a RAG-grounded incident report from the IDS attack log."""
 
-    # Parse log for stats
-    lines = [l for l in log_contents.strip().split('\n') if l.strip()]
+    if not log_contents.strip():
+        return "No attack log entries found. Analyze attack traffic first."
+
+    lines = [line for line in log_contents.strip().split("\n") if line.strip()]
     total_attacks = len(lines)
 
-    # Extract protocols and services
     protocols = {}
-    services  = {}
+    services = {}
+
     for line in lines:
         try:
-            parts = dict(p.split('=') for p in line.split('|')[1:] if '=' in p)
-            proto = parts.get('protocol', '?').strip()
-            svc   = parts.get('service',  '?').strip()
-            protocols[proto] = protocols.get(proto, 0) + 1
-            services[svc]    = services.get(svc,   0) + 1
+            parts = dict(
+                part.split("=", 1)
+                for part in line.split("|")[1:]
+                if "=" in part
+            )
+
+            protocol = parts.get("protocol", "?").strip()
+            service = parts.get("service", "?").strip()
+
+            protocols[protocol] = protocols.get(protocol, 0) + 1
+            services[service] = services.get(service, 0) + 1
         except Exception:
             pass
 
     top_protocol = max(protocols, key=protocols.get) if protocols else "unknown"
-    top_service  = max(services,  key=services.get)  if services  else "unknown"
+    top_service = max(services, key=services.get) if services else "unknown"
 
-    # Get timestamps
-    timestamps = []
-    for line in lines:
-        try:
-            ts = line[1:20]
-            timestamps.append(ts)
-        except Exception:
-            pass
-    first_attack = timestamps[0]  if timestamps else "unknown"
-    last_attack  = timestamps[-1] if timestamps else "unknown"
+    timestamps = [line[1:20] for line in lines if len(line) >= 20]
+    first_attack = timestamps[0] if timestamps else "unknown"
+    last_attack = timestamps[-1] if timestamps else "unknown"
 
-    context = get_context(f"attack {top_protocol} {top_service} intrusion detection mitigation", top_k=2)
+    context = get_context(
+        f"attack {top_protocol} {top_service} intrusion detection mitigation",
+        top_k=2,
+    )
 
-    prompt = f"""You are a cybersecurity analyst. Generate a professional security incident report based on the IDS attack log below.
+    prompt = f"""You are a cybersecurity analyst. Generate a professional security incident report using this IDS attack-log summary.
 
 Attack Log Summary:
 - Total attacks detected: {total_attacks}
 - Protocol distribution: {dict(list(protocols.items())[:5])}
-- Top targeted services: {dict(list(services.items())[:5])}
+- Targeted services: {dict(list(services.items())[:5])}
 - First attack: {first_attack}
 - Most recent attack: {last_attack}
 - Most common protocol: {top_protocol}
@@ -160,37 +186,35 @@ Attack Log Summary:
 Relevant security knowledge:
 {context}
 
-Generate a professional security report with these sections:
-1. Executive Summary (2-3 sentences)
-2. Threat Analysis (identify likely attack types based on protocol/service patterns)
-3. Risk Assessment (rate severity: Low/Medium/High and explain why)
-4. Recommended Actions (3 specific mitigation steps)
+Write a concise, professional report with these sections:
+1. Executive Summary
+2. Threat Analysis
+3. Risk Assessment
+4. Recommended Actions
 
-Keep the report concise, professional, and actionable. Total length: 200-250 words."""
+Include three specific mitigation actions.
+Keep the total report around 200-250 words."""
 
     try:
-        client = get_groq_client()
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+        return get_ai_response(
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=600,
+            max_tokens=1200,
             temperature=0.4,
         )
-        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"AI report generation unavailable: {str(e)}"
 
 
 if __name__ == "__main__":
-    # Quick tests
-    print("=== Test 1: Threat Explainer ===")
+    print("=== Threat Explainer Test ===")
     print(explain_attack("tcp", "private", "REJ"))
 
-    print("\n=== Test 2: Chatbot ===")
+    print("\n=== Chatbot Test ===")
     print(chat_with_rag("What is a Neptune attack?", []))
 
-    print("\n=== Test 3: Log Analyzer ===")
+    print("\n=== Report Test ===")
     sample_log = """[2026-06-11 10:00:01] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
 [2026-06-11 10:00:05] ATTACK DETECTED | protocol=tcp | service=private | flag=S0
 [2026-06-11 10:00:09] ATTACK DETECTED | protocol=tcp | service=http | flag=REJ"""
+
     print(analyze_attack_log(sample_log))
