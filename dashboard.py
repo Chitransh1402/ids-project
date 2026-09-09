@@ -28,7 +28,7 @@ USERS = {
 }
 
 LOG_FILE    = "alerts.log"
-API_URL     = os.environ.get("API_URL",       "https://ids-project2-o.onrender.com")
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 SMTP_SENDER = os.environ.get("SMTP_SENDER",   "chitranshs044@gmail.com")
 SMTP_PASS   = os.environ.get("SMTP_PASSWORD", "")
 ALERT_TO    = os.environ.get("ALERT_TO",      "yashbajhal1485@gmail.com")
@@ -132,13 +132,22 @@ def dashboard():
             st.error(f"❌ API unavailable: {exc}")
         st.markdown("---")
         st.markdown("**🤖 AI (RAG)**")
-        st.success("✅ Groq Connected") if GROQ_KEY else st.warning("⚠️ GROQ_API_KEY not set")
+        if GROQ_KEY:
+            st.success("✅ Groq Connected")
+        else:
+            st.warning("⚠️ GROQ_API_KEY not set")
         if is_admin:
             st.markdown("**📧 Email Alerts**")
-            st.success("✅ Configured") if SMTP_PASS else st.warning("⚠️ Not configured")
+            if SMTP_PASS:
+                st.success("✅ Configured")
+            else:
+                st.warning("⚠️ Not configured")
             if st.button("📧 Test Email"):
                 ok,msg = send_email_alert(1,1,0,"test")
-                st.success("Sent!") if ok else st.error(f"Failed: {msg}")
+                if ok:
+                    st.success("Sent!")
+                else:
+                    st.error(f"Failed: {msg}")
         st.markdown("---")
         if st.button("Sign Out"):
             st.session_state.clear(); st.rerun()
@@ -190,7 +199,7 @@ def dashboard():
             except Exception as exc:
                 st.error(f"❌ Flask API is not running: {exc}")
                 st.stop()
-            predictions = []
+            api_results = []
             progress = st.progress(0); status_text = st.empty()
             for idx, (_, row) in enumerate(df.iterrows()):
                 # Send exactly the 41 training-time input features.
@@ -203,27 +212,44 @@ def dashboard():
                     if 'prediction' not in result:
                         raise ValueError(f"Unexpected API response: {result}")
 
-                    predictions.append(result['prediction'])
+                    api_results.append(result)
                     if result['prediction']=='attack':
                         log_attack(str(row['protocol_type']),str(row['service']),str(row['flag']))
                 except Exception as exc:
-                    predictions.append('error')
+                    api_results.append({
+                        'prediction': 'error',
+                        'attack_probability': None,
+                        'shap_consistency': None,
+                        'confidence_index': None,
+                        'tier': 'ERROR',
+                        'top_features': [],
+                    })
                     st.warning(f"Row {idx + 1} could not be classified: {exc}")
                 progress.progress((idx+1)/len(df))
                 status_text.caption(f"Processed {idx+1} / {len(df)} records")
             progress.empty(); status_text.empty()
+            predictions = [item['prediction'] for item in api_results]
             df_display['prediction'] = predictions
+            df_display['attack_probability'] = [item.get('attack_probability') for item in api_results]
+            df_display['shap_consistency'] = [item.get('shap_consistency') for item in api_results]
+            df_display['confidence_index'] = [item.get('confidence_index') for item in api_results]
+            df_display['tier'] = [item.get('tier', 'ERROR') for item in api_results]
             total=len(predictions); attacks=predictions.count('attack')
             normal=predictions.count('normal'); errors=predictions.count('error')
             c1,c2,c3,c4 = st.columns(4)
             c1.metric("📦 Total",total); c2.metric("✅ Normal",normal)
             c3.metric("🚨 Attacks",attacks)
             if errors: c4.metric("⚠️ Errors",errors)
+            high_attacks = sum(item.get('tier') == 'HIGH' for item in api_results)
             if attacks>0:
                 st.error(f"🚨 ALERT: {attacks} malicious connection(s) detected!")
-                if SMTP_PASS:
-                    ok,msg = send_email_alert(total,attacks,normal,filename)
-                    st.info(f"📧 Email sent to {ALERT_TO}") if ok else st.warning(f"📧 Email failed: {msg}")
+                st.caption(f"Confidence tiers — HIGH: {high_attacks}, MEDIUM: {sum(item.get('tier') == 'MEDIUM' for item in api_results)}, LOW: {sum(item.get('tier') == 'LOW' for item in api_results)}")
+                if SMTP_PASS and high_attacks > 0:
+                    ok,msg = send_email_alert(total,high_attacks,normal,filename)
+                    if ok:
+                        st.info(f"📧 Email sent for {high_attacks} HIGH-confidence attack(s) to {ALERT_TO}")
+                    else:
+                        st.warning(f"📧 Email failed: {msg}")
             elif errors:
                 st.warning(f"⚠️ {errors} row(s) could not be classified. No conclusion can be made yet.")
             else:
@@ -233,7 +259,7 @@ def dashboard():
                 if val=='attack': return 'background-color:#7f1d1d;color:#fca5a5;'
                 if val=='normal': return 'background-color:#14532d;color:#86efac;'
                 return ''
-            styled = df_display[['duration','protocol_type','service','flag','label','prediction']].head(50).reset_index(drop=True)
+            styled = df_display[['duration','protocol_type','service','flag','label','prediction','attack_probability','shap_consistency','confidence_index','tier']].head(50).reset_index(drop=True)
             st.dataframe(styled.style.map(hl,subset=['prediction']),use_container_width=True,hide_index=True)
             st.session_state['last_results'] = {'total':total,'attacks':attacks,'normal':normal,'df':df_display,'filename':filename}
 
