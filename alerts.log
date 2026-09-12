@@ -1,48 +1,50 @@
-[2026-06-10 15:16:17] ATTACK DETECTED | protocol=private | service=REJ | flag=0
-[2026-06-10 15:16:23] ATTACK DETECTED | protocol=telnet | service=S0 | flag=0
-[2026-06-10 15:16:25] ATTACK DETECTED | protocol=private | service=REJ | flag=0
-[2026-06-10 15:16:28] ATTACK DETECTED | protocol=ldap | service=REJ | flag=0
-[2026-06-10 15:16:30] ATTACK DETECTED | protocol=courier | service=REJ | flag=0
-[2026-06-10 15:16:32] ATTACK DETECTED | protocol=discard | service=RSTO | flag=0
-[2026-06-10 15:16:34] ATTACK DETECTED | protocol=private | service=S0 | flag=0
-[2026-06-10 15:16:36] ATTACK DETECTED | protocol=mtp | service=REJ | flag=0
-[2026-06-10 16:34:21] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:34:23] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:34:26] ATTACK DETECTED | protocol=tcp | service=private | flag=S0
-[2026-06-10 16:34:28] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:34:34] ATTACK DETECTED | protocol=tcp | service=imap4 | flag=REJ
-[2026-06-10 16:34:37] ATTACK DETECTED | protocol=tcp | service=mtp | flag=REJ
-[2026-06-10 16:34:45] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:34:54] ATTACK DETECTED | protocol=tcp | service=discard | flag=RSTO
-[2026-06-10 16:35:00] ATTACK DETECTED | protocol=tcp | service=systat | flag=S0
-[2026-06-10 16:35:05] ATTACK DETECTED | protocol=tcp | service=courier | flag=REJ
-[2026-06-10 16:35:07] ATTACK DETECTED | protocol=tcp | service=iso_tsap | flag=REJ
-[2026-06-10 16:35:09] ATTACK DETECTED | protocol=tcp | service=telnet | flag=S0
-[2026-06-10 16:35:11] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:35:13] ATTACK DETECTED | protocol=tcp | service=ldap | flag=REJ
-[2026-06-10 16:35:22] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:38:39] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:38:41] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:38:43] ATTACK DETECTED | protocol=tcp | service=private | flag=S0
-[2026-06-10 16:38:46] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:38:52] ATTACK DETECTED | protocol=tcp | service=imap4 | flag=REJ
-[2026-06-10 16:38:54] ATTACK DETECTED | protocol=tcp | service=mtp | flag=REJ
-[2026-06-10 16:39:03] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:39:12] ATTACK DETECTED | protocol=tcp | service=discard | flag=RSTO
-[2026-06-10 16:39:18] ATTACK DETECTED | protocol=tcp | service=systat | flag=S0
-[2026-06-10 16:39:22] ATTACK DETECTED | protocol=tcp | service=courier | flag=REJ
-[2026-06-10 16:39:25] ATTACK DETECTED | protocol=tcp | service=iso_tsap | flag=REJ
-[2026-06-10 16:39:27] ATTACK DETECTED | protocol=tcp | service=telnet | flag=S0
-[2026-06-10 16:39:29] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:39:31] ATTACK DETECTED | protocol=tcp | service=ldap | flag=REJ
-[2026-06-10 16:39:40] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ
-[2026-06-10 16:44:22] ATTACK DETECTED | protocol=ftp_data | service=SF | flag=12983
-[2026-06-10 16:48:20] ATTACK DETECTED | protocol=ftp_data | service=SF | flag=12983
-[2026-06-10 16:49:06] ATTACK DETECTED | protocol=private | service=REJ | flag=0
-[2026-06-10 16:49:13] ATTACK DETECTED | protocol=telnet | service=S0 | flag=0
-[2026-06-10 16:49:15] ATTACK DETECTED | protocol=private | service=REJ | flag=0
-[2026-06-10 16:49:17] ATTACK DETECTED | protocol=ldap | service=REJ | flag=0
-[2026-06-10 16:49:19] ATTACK DETECTED | protocol=courier | service=REJ | flag=0
-[2026-06-10 16:49:21] ATTACK DETECTED | protocol=discard | service=RSTO | flag=0
-[2026-06-10 16:49:24] ATTACK DETECTED | protocol=private | service=S0 | flag=0
-[2026-06-10 16:49:26] ATTACK DETECTED | protocol=mtp | service=REJ | flag=0
+[2026-09-12 22:16:42] ATTACK DETECTED | protocol=private | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:16:42] ATTACK DETECTED | protocol=private | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:16:42] ATTACK DETECTED | protocol=private | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:16:42] ATTACK DETECTED | protocol=telnet | service=S0 | flag=0 | tier=LOW
+[2026-09-12 22:16:42] ATTACK DETECTED | protocol=private | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:16:43] ATTACK DETECTED | protocol=ldap | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:16:43] ATTACK DETECTED | protocol=courier | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:16:43] ATTACK DETECTED | protocol=discard | service=RSTO | flag=0 | tier=LOW
+[2026-09-12 22:16:43] ATTACK DETECTED | protocol=private | service=S0 | flag=0 | tier=MEDIUM
+[2026-09-12 22:16:43] ATTACK DETECTED | protocol=mtp | service=REJ | flag=0 | tier=LOW
+[2026-09-12 22:17:08] ATTACK DETECTED | protocol=ftp_data | service=SF | flag=12983 | tier=MEDIUM
+[2026-09-12 22:17:08] ATTACK DETECTED | protocol=http | service=SF | flag=267 | tier=LOW
+[2026-09-12 22:17:08] ATTACK DETECTED | protocol=smtp | service=SF | flag=1022 | tier=LOW
+[2026-09-12 22:17:08] ATTACK DETECTED | protocol=http | service=SF | flag=327 | tier=LOW
+[2026-09-12 22:17:09] ATTACK DETECTED | protocol=smtp | service=SF | flag=616 | tier=LOW
+[2026-09-12 22:17:09] ATTACK DETECTED | protocol=telnet | service=SF | flag=773 | tier=LOW
+[2026-09-12 22:17:09] ATTACK DETECTED | protocol=http | service=SF | flag=350 | tier=LOW
+[2026-09-12 22:17:09] ATTACK DETECTED | protocol=http | service=SF | flag=213 | tier=LOW
+[2026-09-12 22:17:09] ATTACK DETECTED | protocol=http | service=SF | flag=246 | tier=LOW
+[2026-09-12 22:17:10] ATTACK DETECTED | protocol=private | service=SF | flag=45 | tier=LOW
+[2026-09-12 22:17:21] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:17:21] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:17:22] ATTACK DETECTED | protocol=tcp | service=private | flag=S0 | tier=HIGH
+[2026-09-12 22:17:22] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:22] ATTACK DETECTED | protocol=tcp | service=imap4 | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:22] ATTACK DETECTED | protocol=tcp | service=mtp | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:23] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:24] ATTACK DETECTED | protocol=tcp | service=discard | flag=RSTO | tier=MEDIUM
+[2026-09-12 22:17:24] ATTACK DETECTED | protocol=tcp | service=systat | flag=S0 | tier=HIGH
+[2026-09-12 22:17:25] ATTACK DETECTED | protocol=tcp | service=courier | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:25] ATTACK DETECTED | protocol=tcp | service=iso_tsap | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:25] ATTACK DETECTED | protocol=tcp | service=telnet | flag=S0 | tier=MEDIUM
+[2026-09-12 22:17:25] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:17:26] ATTACK DETECTED | protocol=tcp | service=ldap | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:26] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:17:56] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:17:57] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:17:57] ATTACK DETECTED | protocol=tcp | service=private | flag=S0 | tier=HIGH
+[2026-09-12 22:17:57] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:58] ATTACK DETECTED | protocol=tcp | service=imap4 | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:58] ATTACK DETECTED | protocol=tcp | service=mtp | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:58] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=MEDIUM
+[2026-09-12 22:17:59] ATTACK DETECTED | protocol=tcp | service=discard | flag=RSTO | tier=MEDIUM
+[2026-09-12 22:18:00] ATTACK DETECTED | protocol=tcp | service=systat | flag=S0 | tier=HIGH
+[2026-09-12 22:18:00] ATTACK DETECTED | protocol=tcp | service=courier | flag=REJ | tier=MEDIUM
+[2026-09-12 22:18:00] ATTACK DETECTED | protocol=tcp | service=iso_tsap | flag=REJ | tier=MEDIUM
+[2026-09-12 22:18:00] ATTACK DETECTED | protocol=tcp | service=telnet | flag=S0 | tier=MEDIUM
+[2026-09-12 22:18:01] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
+[2026-09-12 22:18:01] ATTACK DETECTED | protocol=tcp | service=ldap | flag=REJ | tier=MEDIUM
+[2026-09-12 22:18:02] ATTACK DETECTED | protocol=tcp | service=private | flag=REJ | tier=HIGH
